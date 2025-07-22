@@ -1017,6 +1017,151 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			}
 		break;
 
+		// =====================================
+		// P29: ACCIONES PARA PAPELERA DE CITAS
+		// =====================================
+		
+		case 'obtener_ejecutivos_administrativos':
+			// Obtener solo ejecutivos con tipo 'Administrativo'
+			$query = "SELECT id_eje, nom_eje, tipo 
+					 FROM ejecutivo 
+					 WHERE tipo = 'Administrativo' AND eli_eje = 1 
+					 ORDER BY nom_eje ASC";
+			
+			$datos = ejecutarConsulta($query, $connection);
+			
+			if($datos !== false) {
+				file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] P29: Ejecutivos administrativos encontrados: ' . count($datos) . "\n", FILE_APPEND);
+				echo respuestaExito($datos, 'Ejecutivos administrativos obtenidos correctamente');
+			} else {
+				echo respuestaError('Error al consultar ejecutivos administrativos: ' . mysqli_error($connection));
+			}
+		break;
+
+		case 'obtener_citas_papelera':
+			$id_ejecutivo_admin = escape($_POST['id_ejecutivo_admin'], $connection);
+			
+			if (!$id_ejecutivo_admin) {
+				echo respuestaError('ID de ejecutivo administrativo no proporcionado');
+				break;
+			}
+			
+			// Verificar que el ejecutivo sea administrativo
+			$queryVerificar = "SELECT tipo FROM ejecutivo WHERE id_eje = '$id_ejecutivo_admin' AND eli_eje = 1";
+			$verificacion = ejecutarConsulta($queryVerificar, $connection);
+			
+			if (!$verificacion || $verificacion[0]['tipo'] !== 'Administrativo') {
+				echo respuestaError('El ejecutivo especificado no es de tipo Administrativo o no existe');
+				break;
+			}
+			
+			// Obtener todas las columnas de la tabla cita
+			$queryColumnas = "SHOW COLUMNS FROM cita";
+			$columnas = ejecutarConsulta($queryColumnas, $connection);
+			
+			$camposSelect = [];
+			if ($columnas) {
+				foreach ($columnas as $columna) {
+					$camposSelect[] = 'c.' . $columna['Field'];
+				}
+			}
+			
+			// Agregar campos adicionales
+			$camposSelect[] = 'e.nom_eje';
+			$camposSelect[] = 'e.tipo as tipo_ejecutivo';
+			$camposSelect[] = 'p.nom_pla';
+			$selectFields = implode(', ', $camposSelect);
+			
+			// Consulta para obtener citas eliminadas (eli_cit = 0)
+			// Se pueden obtener citas eliminadas de cualquier ejecutivo para que el administrativo las vea
+			$query = "SELECT $selectFields 
+					 FROM cita c
+					 LEFT JOIN ejecutivo e ON c.id_eje2 = e.id_eje
+					 LEFT JOIN plantel p ON c.pla_cit = p.id_pla
+					 WHERE c.eli_cit = 0
+					 ORDER BY c.cit_cit DESC, c.hor_cit ASC";
+			
+			file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] P29: Query papelera: ' . $query . "\n", FILE_APPEND);
+			
+			$datos = ejecutarConsulta($query, $connection);
+			
+			if($datos !== false) {
+				file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] P29: Citas eliminadas encontradas: ' . count($datos) . "\n", FILE_APPEND);
+				echo respuestaExito($datos, 'Citas de la papelera obtenidas correctamente');
+			} else {
+				echo respuestaError('Error al consultar citas de la papelera: ' . mysqli_error($connection));
+			}
+		break;
+
+		case 'restaurar_citas':
+			$ids_citas_json = $_POST['ids_citas'] ?? '';
+			
+			if (!$ids_citas_json) {
+				echo respuestaError('No se proporcionaron IDs de citas para restaurar');
+				break;
+			}
+			
+			$ids_citas = json_decode($ids_citas_json, true);
+			
+			if (!is_array($ids_citas) || empty($ids_citas)) {
+				echo respuestaError('Lista de IDs de citas inválida');
+				break;
+			}
+			
+			$restauradas = 0;
+			$errores = 0;
+			$detalles = [];
+			
+			foreach ($ids_citas as $id_cit) {
+				$id_cit_escaped = escape($id_cit, $connection);
+				
+				// Verificar que la cita existe y está eliminada
+				$queryVerificar = "SELECT nom_cit, eli_cit FROM cita WHERE id_cit = '$id_cit_escaped'";
+				$verificacion = ejecutarConsulta($queryVerificar, $connection);
+				
+				if (!$verificacion || empty($verificacion)) {
+					$errores++;
+					$detalles[] = "Cita ID $id_cit no encontrada";
+					continue;
+				}
+				
+				if ($verificacion[0]['eli_cit'] != 0) {
+					$errores++;
+					$detalles[] = "Cita ID $id_cit no está eliminada";
+					continue;
+				}
+				
+				// Restaurar la cita (cambiar eli_cit de 0 a 1)
+				$queryRestaurar = "UPDATE cita SET eli_cit = 1 WHERE id_cit = '$id_cit_escaped'";
+				
+				if (mysqli_query($connection, $queryRestaurar)) {
+					$restauradas++;
+					$nombreCita = $verificacion[0]['nom_cit'] ?: 'Sin nombre';
+					$detalles[] = "Restaurada: $nombreCita (ID: $id_cit)";
+					
+					// Registrar en historial
+					registrarHistorial($connection, $id_cit, 'cambio', "Cita restaurada desde la papelera por ejecutivo administrativo", 'Sistema P29');
+					
+					file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] P29: Cita restaurada ID: ' . $id_cit . "\n", FILE_APPEND);
+				} else {
+					$errores++;
+					$detalles[] = "Error al restaurar cita ID $id_cit: " . mysqli_error($connection);
+				}
+			}
+			
+			$resultado = [
+				'restauradas' => $restauradas,
+				'errores' => $errores,
+				'detalles' => $detalles
+			];
+			
+			if ($restauradas > 0) {
+				echo respuestaExito($resultado, "Se restauraron $restauradas cita(s) exitosamente");
+			} else {
+				echo respuestaError("No se pudieron restaurar las citas: " . implode(', ', $detalles));
+			}
+		break;
+
 		default:
 			echo respuestaError('Acción no válida');
 		break;

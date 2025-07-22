@@ -599,6 +599,152 @@
             display: none !important;
             visibility: hidden !important;
         }
+        
+        /* =====================================
+         * P29: ESTILOS PARA MODO PAPELERA
+         * ===================================== */
+        
+        /* Estilos para el filtro de papelera */
+        #filtro-papelera {
+            border-left: 4px solid #dc3545 !important;
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff5f5 100%);
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
+        }
+        
+        #filtro-papelera h6 {
+            color: #dc3545;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        /* Modo papelera para la tabla */
+        .handsontable.modo-papelera {
+            /* Tabla limpia en modo papelera - solo un borde sutil */
+            border: 2px solid #dc3545;
+            border-radius: 4px;
+        }
+        
+        .handsontable.modo-papelera::before {
+            content: "🗑️ MODO PAPELERA";
+            position: absolute;
+            top: -25px;
+            left: 0;
+            background: #dc3545;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            font-size: 0.8em;
+            z-index: 1000;
+        }
+        
+        /* Estilos normales para citas eliminadas en la tabla */
+        .handsontable.modo-papelera .htCore tbody tr {
+            /* Sin estilos especiales - mantener normal */
+        }
+        
+        .handsontable.modo-papelera .htCore tbody tr:nth-child(even) {
+            /* Sin estilos especiales - mantener normal */
+        }
+        
+        .handsontable.modo-papelera .htCore tbody tr:hover {
+            background-color: rgba(220, 53, 69, 0.1) !important;
+        }
+        
+        /* Remover el icono de papelera en cada fila */
+        .handsontable.modo-papelera .htCore tbody tr::before {
+            display: none; /* Ocultar iconos extras */
+        }
+        
+        /* Asegurar altura consistente en todas las filas */
+        .handsontable .htCore tbody tr {
+            height: 30px !important;
+            max-height: 30px !important;
+            min-height: 30px !important;
+        }
+        
+        .handsontable .htCore tbody tr td {
+            height: 30px !important;
+            max-height: 30px !important;
+            min-height: 30px !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        
+        /* Botones específicos del modo papelera */
+        #btn-buscar-papelera {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            border: none;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+        
+        #btn-buscar-papelera:hover {
+            background: linear-gradient(135deg, #c82333, #bd2130);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        #btn-restaurar-seleccionadas {
+            background: linear-gradient(135deg, #28a745, #218838);
+            border: none;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            animation: pulseRestaurar 2s infinite;
+        }
+        
+        #btn-restaurar-seleccionadas:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        
+        @keyframes pulseRestaurar {
+            0% { box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); }
+            50% { box-shadow: 0 4px 16px rgba(40, 167, 69, 0.5); }
+            100% { box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); }
+        }
+        
+        /* Mensaje informativo de papelera */
+        .mensaje-papelera {
+            margin-bottom: 20px;
+            animation: slideInDown 0.5s ease-out;
+        }
+        
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Selector de ejecutivo administrativo */
+        #ejecutivo-administrativo-filtro {
+            border-left: 3px solid #dc3545;
+        }
+        
+        #ejecutivo-administrativo-filtro:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        /* Checkbox de papelera */
+        #papelera-activa:checked {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        #papelera-activa:checked + label {
+            color: #dc3545;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -690,6 +836,42 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <!-- P29: Filtro de Papelera para Administrativos -->
+                    <div class="row mt-2" id="filtro-papelera" style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 4px solid #dc3545;">
+                        <div class="col-md-12">
+                            <h6 class="text-danger"><i class="fas fa-trash-alt"></i> 📌 P29 - Papelera de Citas (Solo Administrativos)</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="papelera-activa"><strong>Ver Papelera:</strong></label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="papelera-activa" value="1" onchange="togglePapelera()">
+                                <label class="form-check-label" for="papelera-activa">
+                                    🗑️ Mostrar citas eliminadas
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="ejecutivo-administrativo-filtro"><strong>Ejecutivo Administrativo:</strong></label>
+                            <select id="ejecutivo-administrativo-filtro" class="form-control" disabled>
+                                <option value="">Seleccionar ejecutivo...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-danger" id="btn-buscar-papelera" onclick="buscarPapelera()" disabled>
+                                <i class="fas fa-search"></i> Buscar Eliminadas
+                            </button>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-success" id="btn-restaurar-seleccionadas" onclick="restaurarCitasSeleccionadas()" disabled style="display: none;">
+                                <i class="fas fa-undo"></i> Restaurar Seleccionadas
+                            </button>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <small class="text-muted"><strong>Nota:</strong> Solo ejecutivos tipo "Administrativo" pueden acceder a la papelera</small>
+                        </div>
+                    </div>
+                    
                     <div class="row mt-2">
                         <div class="col-md-2">
                             <label for="planteles-asociados-filtro"><strong>Incluir Planteles Asociados:</strong></label>
@@ -2271,6 +2453,12 @@
                 columns: generarColumnas(),
                 rowHeaders: true,
                 height: 600,
+                
+                // Configuración de altura de filas fija
+                rowHeights: 30, // Altura fija para todas las filas
+                minRows: datosBase.length,
+                maxRows: datosBase.length,
+                
                 licenseKey: 'non-commercial-and-evaluation',
                 
                 // CONFIGURACIÓN ESTRICTA PARA EDICIÓN DE UNA SOLA CELDA - PRÁCTICA 28
@@ -4200,6 +4388,245 @@
                 cargarCitas();
                 actualizarInfoFiltroActivo();
             }
+        }
+        
+        // =====================================
+        // P29: FUNCIONES DE PAPELERA 
+        // =====================================
+        
+        var modoPapelera = false;
+        var citasSeleccionadasPapelera = [];
+        
+        // Función para alternar el modo papelera
+        function togglePapelera() {
+            modoPapelera = $('#papelera-activa').is(':checked');
+            var ejecutivoSelect = $('#ejecutivo-administrativo-filtro');
+            var btnBuscar = $('#btn-buscar-papelera');
+            var btnRestaurar = $('#btn-restaurar-seleccionadas');
+            
+            if (modoPapelera) {
+                // Activar modo papelera
+                ejecutivoSelect.prop('disabled', false);
+                btnBuscar.prop('disabled', false);
+                
+                // Cargar ejecutivos administrativos
+                cargarEjecutivosAdministrativos();
+                
+                // Cambiar el aspecto de la tabla para indicar modo papelera
+                $('.handsontable').addClass('modo-papelera');
+                
+                // Habilitar selección múltiple para restaurar citas
+                if (hot) {
+                    hot.updateSettings({
+                        selectionMode: 'multiple',
+                        multiSelect: true,
+                        rowHeights: 30 // Mantener altura fija en modo papelera
+                    });
+                }
+                
+                console.log('🗑️ Modo papelera ACTIVADO - Selección múltiple habilitada');
+            } else {
+                // Desactivar modo papelera
+                ejecutivoSelect.prop('disabled', true).val('');
+                btnBuscar.prop('disabled', true);
+                btnRestaurar.hide().prop('disabled', true);
+                
+                $('.handsontable').removeClass('modo-papelera');
+                $('.mensaje-papelera').remove();
+                
+                // Restaurar selección simple
+                if (hot) {
+                    hot.updateSettings({
+                        selectionMode: 'single',
+                        multiSelect: false,
+                        rowHeights: 30 // Mantener altura fija
+                    });
+                }
+                
+                // Volver a cargar las citas normales
+                cargarCitas();
+                
+                console.log('✅ Modo papelera DESACTIVADO - Selección simple restaurada');
+            }
+        }
+        
+        // Función para cargar ejecutivos administrativos
+        function cargarEjecutivosAdministrativos() {
+            $.ajax({
+                url: 'server/controlador_citas.php',
+                type: 'POST',
+                data: { 
+                    action: 'obtener_ejecutivos_administrativos'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    var select = $('#ejecutivo-administrativo-filtro');
+                    select.empty().append('<option value="">Seleccionar ejecutivo...</option>');
+                    
+                    if (response.success && response.data) {
+                        response.data.forEach(function(ejecutivo) {
+                            select.append(`
+                                <option value="${ejecutivo.id_eje}">
+                                    🔹 ${ejecutivo.nom_eje} (ID: ${ejecutivo.id_eje})
+                                </option>
+                            `);
+                        });
+                        console.log('✅ Ejecutivos administrativos cargados:', response.data.length);
+                    } else {
+                        console.error('❌ Error al cargar ejecutivos administrativos:', response.message);
+                    }
+                },
+                error: function() {
+                    console.error('❌ Error de conexión al cargar ejecutivos administrativos');
+                }
+            });
+        }
+        
+        // Función para buscar citas en la papelera
+        function buscarPapelera() {
+            var idEjecutivoAdmin = $('#ejecutivo-administrativo-filtro').val();
+            
+            if (!idEjecutivoAdmin) {
+                alert('Por favor selecciona un ejecutivo administrativo para buscar en la papelera.');
+                return;
+            }
+            
+            console.log('🗑️ Buscando citas eliminadas del ejecutivo:', idEjecutivoAdmin);
+            
+            $.ajax({
+                url: 'server/controlador_citas.php',
+                type: 'POST',
+                data: { 
+                    action: 'obtener_citas_papelera',
+                    id_ejecutivo_admin: idEjecutivoAdmin
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        console.log('🗑️ Citas eliminadas encontradas:', response.data.length);
+                        mostrarCitasEnTabla(response.data, true);
+                        
+                        // Mostrar botón de restaurar si hay citas
+                        if (response.data.length > 0) {
+                            $('#btn-restaurar-seleccionadas').show().prop('disabled', false);
+                            mostrarMensajePapelera(response.data.length);
+                        } else {
+                            alert('No se encontraron citas eliminadas para este ejecutivo administrativo.');
+                            $('#btn-restaurar-seleccionadas').hide();
+                        }
+                    } else {
+                        console.error('❌ Error al buscar citas eliminadas:', response.message);
+                        alert('Error al buscar citas eliminadas: ' + response.message);
+                    }
+                },
+                error: function() {
+                    console.error('❌ Error de conexión al buscar citas eliminadas');
+                    alert('Error de conexión al buscar citas eliminadas');
+                }
+            });
+        }
+        
+        // Función para mostrar mensaje informativo sobre la papelera
+        function mostrarMensajePapelera(cantidad) {
+            var mensaje = `
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <strong>🗑️ Modo Papelera Activo:</strong> Se encontraron <strong>${cantidad}</strong> citas eliminadas.
+                    <br><small>• Selecciona las filas que deseas restaurar y haz clic en "Restaurar Seleccionadas"</small>
+                    <br><small>• Las citas restauradas volverán a aparecer en el listado normal</small>
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            `;
+            
+            // Mostrar el mensaje antes de la tabla
+            if ($('.mensaje-papelera').length === 0) {
+                $('#tabla-container').before('<div class="mensaje-papelera">' + mensaje + '</div>');
+            }
+        }
+        
+        // Función para restaurar citas seleccionadas
+        function restaurarCitasSeleccionadas() {
+            if (!hot) {
+                alert('Error: No hay tabla disponible');
+                return;
+            }
+            
+            var selected = hot.getSelected();
+            if (!selected || selected.length === 0) {
+                alert('Por favor selecciona al menos una fila para restaurar.');
+                return;
+            }
+            
+            var citasARestaurar = [];
+            var idCitIndex = obtenerIndiceColumna('id_cit');
+            
+            // Obtener IDs de las citas seleccionadas
+            selected.forEach(function(range) {
+                for (var row = range[0]; row <= range[2]; row++) {
+                    var data = hot.getDataAtRow(row);
+                    if (data && data[idCitIndex]) {
+                        citasARestaurar.push({
+                            id_cit: data[idCitIndex],
+                            nombre: data[obtenerIndiceColumna('nom_cit')] || 'Sin nombre'
+                        });
+                    }
+                }
+            });
+            
+            if (citasARestaurar.length === 0) {
+                alert('No se encontraron citas válidas en la selección.');
+                return;
+            }
+            
+            var confirmacion = confirm(`¿Estás seguro de restaurar ${citasARestaurar.length} cita(s)?\n\nEsto hará que vuelvan a aparecer en el listado normal de citas.`);
+            
+            if (confirmacion) {
+                restaurarCitas(citasARestaurar);
+            }
+        }
+        
+        // Función para restaurar citas específicas
+        function restaurarCitas(citas) {
+            var idsParaRestaurar = citas.map(cita => cita.id_cit);
+            
+            console.log('🔄 Restaurando citas:', idsParaRestaurar);
+            
+            $.ajax({
+                url: 'server/controlador_citas.php',
+                type: 'POST',
+                data: { 
+                    action: 'restaurar_citas',
+                    ids_citas: JSON.stringify(idsParaRestaurar)
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        console.log('✅ Citas restauradas exitosamente:', response.data);
+                        
+                        // Mostrar mensaje de éxito
+                        var mensaje = `✅ Se restauraron ${response.data.restauradas} cita(s) exitosamente.`;
+                        if (response.data.errores > 0) {
+                            mensaje += ` (${response.data.errores} errores)`;
+                        }
+                        alert(mensaje);
+                        
+                        // Recargar la papelera para mostrar los cambios
+                        buscarPapelera();
+                        
+                        // Notificar via WebSocket
+                        mostrarBadgeWebSocket('success', `Restauradas ${response.data.restauradas} citas desde la papelera`);
+                        
+                    } else {
+                        console.error('❌ Error al restaurar citas:', response.message);
+                        alert('Error al restaurar citas: ' + response.message);
+                    }
+                },
+                error: function() {
+                    console.error('❌ Error de conexión al restaurar citas');
+                    alert('Error de conexión al restaurar citas');
+                }
+            });
         }
         
         // =====================================
