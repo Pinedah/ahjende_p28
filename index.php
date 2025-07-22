@@ -682,6 +682,16 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            <label for="tipo-ejecutivo-filtro"><strong>Tipo de Ejecutivo:</strong></label>
+                            <select id="tipo-ejecutivo-filtro" class="form-control">
+                                <option value="">Todos los tipos</option>
+                                <option value="Administrativo">🔹 Administrativo</option>
+                                <option value="Admisión">🔸 Admisión</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-2">
                             <label for="planteles-asociados-filtro"><strong>Incluir Planteles Asociados:</strong></label>
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="planteles-asociados-filtro" value="1">
@@ -1439,6 +1449,12 @@
                         if (mensaje.campo === 'id_eje2' && mensaje.valor) {
                             // Convertir ID de ejecutivo a nombre
                             valorParaMostrar = obtenerNombreEjecutivo(mensaje.valor) || mensaje.valor;
+                        } else if (mensaje.campo === 'id_eje_admin' && mensaje.valor) {
+                            // PRÁCTICA 28: Convertir ID de ejecutivo administrativo a nombre
+                            valorParaMostrar = obtenerNombreEjecutivo(mensaje.valor) || mensaje.valor;
+                        } else if (mensaje.campo === 'id_eje_admision' && mensaje.valor) {
+                            // PRÁCTICA 28: Convertir ID de ejecutivo de admisión a nombre
+                            valorParaMostrar = obtenerNombreEjecutivo(mensaje.valor) || mensaje.valor;
                         } else if (mensaje.campo === 'pla_cit' && mensaje.valor) {
                             // Convertir ID de plantel a nombre
                             valorParaMostrar = obtenerNombrePlantel(mensaje.valor) || mensaje.valor;
@@ -1620,10 +1636,30 @@
                 // Configuración específica para dropdowns
                 if (col.type === 'dropdown') {
                     if (col.key === 'id_eje2') {
-                        // Dropdown de ejecutivos - siempre usar la lista más actualizada
+                        // Dropdown de ejecutivos - todos los ejecutivos
                         columna.source = ejecutivosDropdown.length > 0 ? ejecutivosDropdown : ['No hay ejecutivos'];
                         columna.strict = false;
-                        console.log('Configurando dropdown ejecutivos:', columna.source);
+                        console.log('Configurando dropdown EJECUTIVO:', columna.source);
+                    } else if (col.key === 'id_eje_admin') {
+                        // PRÁCTICA 28: Dropdown de ejecutivos ADMINISTRATIVOS solamente
+                        var ejecutivosAdmin = ejecutivos.filter(function(eje) {
+                            return eje.tipo === 'Administrativo';
+                        }).map(function(eje) {
+                            return eje.nom_eje;
+                        });
+                        columna.source = ejecutivosAdmin.length > 0 ? ejecutivosAdmin : ['No hay ejecutivos administrativos'];
+                        columna.strict = false;
+                        console.log('Configurando dropdown ADMINISTRATIVO:', columna.source);
+                    } else if (col.key === 'id_eje_admision') {
+                        // PRÁCTICA 28: Dropdown de ejecutivos de ADMISIÓN solamente
+                        var ejecutivosAdmision = ejecutivos.filter(function(eje) {
+                            return eje.tipo === 'Admisión';
+                        }).map(function(eje) {
+                            return eje.nom_eje;
+                        });
+                        columna.source = ejecutivosAdmision.length > 0 ? ejecutivosAdmision : ['No hay ejecutivos de admisión'];
+                        columna.strict = false;
+                        console.log('Configurando dropdown ejecutivos (Admisión):', columna.source);
                     } else if (col.key === 'pla_cit') {
                         // Dropdown de planteles - siempre usar la lista más actualizada
                         columna.source = plantelesDropdown.length > 0 ? plantelesDropdown : ['No hay planteles'];
@@ -1703,6 +1739,15 @@
                             });
                             
                             console.log('Ejecutivos cargados:', ejecutivos);
+                            
+                            // DEBUG: Verificar tipos de ejecutivos
+                            console.log('DEBUG - Verificando tipos de ejecutivos:');
+                            ejecutivos.forEach(function(eje) {
+                                console.log('ID:', eje.id_eje, 'Nombre:', eje.nom_eje, 'Tipo:', '"' + eje.tipo + '"', 'Longitud:', eje.tipo.length);
+                            });
+                            
+                            var tiposUnicos = [...new Set(ejecutivos.map(eje => eje.tipo))];
+                            console.log('Tipos únicos encontrados:', tiposUnicos);
                             
                             // Cargar planteles para el filtro
                             cargarPlanteles().then(function() {
@@ -1790,6 +1835,31 @@
                 return pla.id_pla == idPlantel;
             });
             return plantel ? plantel.nom_pla : '';
+        }
+        
+        function obtenerTipoEjecutivo(idEjecutivo) {
+            var ejecutivo = ejecutivos.find(function(eje) {
+                return eje.id_eje == idEjecutivo;
+            });
+            return ejecutivo ? ejecutivo.tipo : '';
+        }
+        
+        function obtenerEjecutivoPorTipo(tipo) {
+            // Retornar el primer ejecutivo del tipo especificado
+            var ejecutivosDeTipo = ejecutivos.filter(function(eje) {
+                return eje.tipo === tipo;
+            });
+            return ejecutivosDeTipo.length > 0 ? ejecutivosDeTipo[0].id_eje : null;
+        }
+        
+        // PRÁCTICA 28: Función para extraer ID del ejecutivo desde dropdown "Nombre (Tipo)"
+        function obtenerIdEjecutivoDesdeDropdown(textoDropdown) {
+            // Buscar ejecutivo que coincida con el formato "Nombre (Tipo)"
+            var ejecutivo = ejecutivos.find(function(eje) {
+                var formatoEsperado = eje.nom_eje + ' (' + eje.tipo + ')';
+                return formatoEsperado === textoDropdown;
+            });
+            return ejecutivo ? ejecutivo.id_eje : null;
         }
         
         // =====================================
@@ -2484,6 +2554,24 @@
                             TD.innerHTML = nombreEjecutivo;
                         }
                     }
+
+                    // PR�CTICA 28: Renderer para ejecutivos administrativos
+                    if (campo === 'id_eje_admin' && value) {
+                        var nombreEjecutivo = obtenerNombreEjecutivo(value);
+                        if (nombreEjecutivo) {
+                            TD.innerHTML = ' ' + nombreEjecutivo;
+                        }
+                    }
+
+                    // PR�CTICA 28: Renderer para ejecutivos de admisi�n
+                    if (campo === 'id_eje_admision' && value) {
+                        var nombreEjecutivo = obtenerNombreEjecutivo(value);
+                        if (nombreEjecutivo) {
+                            TD.innerHTML = ' ' + nombreEjecutivo;
+                        }
+                    }
+                    
+                    
                     
                     // Renderer para estatus de cita (Práctica 22)
                     if (campo === 'est_cit' && value) {
@@ -2773,6 +2861,24 @@
                             TD.innerHTML = nombreEjecutivo;
                         }
                     }
+
+                    // PR�CTICA 28: Renderer para ejecutivos administrativos
+                    if (campo === 'id_eje_admin' && value) {
+                        var nombreEjecutivo = obtenerNombreEjecutivo(value);
+                        if (nombreEjecutivo) {
+                            TD.innerHTML = ' ' + nombreEjecutivo;
+                        }
+                    }
+
+                    // PR�CTICA 28: Renderer para ejecutivos de admisi�n
+                    if (campo === 'id_eje_admision' && value) {
+                        var nombreEjecutivo = obtenerNombreEjecutivo(value);
+                        if (nombreEjecutivo) {
+                            TD.innerHTML = ' ' + nombreEjecutivo;
+                        }
+                    }
+                    
+                    
                     
                     // Renderer para estatus de cita (Práctica 22)
                     if (campo === 'est_cit' && value) {
@@ -2974,12 +3080,34 @@
                 var idEjecutivo = obtenerIdEjecutivo(newValue);
                 if (idEjecutivo) {
                     valorParaGuardar = idEjecutivo;
+                    
+                    // PRÁCTICA 28: Auto-actualizar tipo de ejecutivo (id_eje3)
+                    var tipoEjecutivo = obtenerTipoEjecutivo(idEjecutivo);
+                    if (tipoEjecutivo) {
+                        var idxTipoEjecutivo = obtenerIndiceColumna('id_eje3');
+                        if (idxTipoEjecutivo !== -1) {
+                            console.log('🔄 P28: Auto-actualizando tipo de ejecutivo a:', tipoEjecutivo);
+                            // Actualizar visualmente el tipo de ejecutivo en la tabla
+                            hot.setDataAtCell(row, idxTipoEjecutivo, tipoEjecutivo, 'auto_update');
+                            // Guardar el ID del ejecutivo en id_eje3 (misma referencia que id_eje2)
+                            datosPendientes['id_eje3'] = idEjecutivo;
+                        }
+                    }
                 }
             } else if (campo === 'pla_cit' && newValue && newValue !== '') {
                 // Convertir nombre de plantel a ID
                 var idPlantel = obtenerIdPlantel(newValue);
                 if (idPlantel) {
                     valorParaGuardar = idPlantel;
+                }
+            } else if ((campo === 'id_eje_admin' || campo === 'id_eje_admision') && newValue && newValue !== '') {
+                // PRÁCTICA 28: Para ejecutivos por tipo, convertir nombre de ejecutivo a ID
+                var idEjecutivo = obtenerIdEjecutivo(newValue);
+                if (idEjecutivo) {
+                    valorParaGuardar = idEjecutivo;
+                } else {
+                    // Si no encontramos ejecutivo, mantener NULL
+                    valorParaGuardar = null;
                 }
             }
             
@@ -3100,6 +3228,43 @@
                     });
                 } else {
                     console.warn('⚠️ No se puede guardar plantel: no hay ID de cita válido');
+                }
+            }
+            
+            // PRÁCTICA 28: Guardar inmediatamente los campos de ejecutivos por tipo
+            if ((campo === 'id_eje_admin' || campo === 'id_eje_admision') && newValue && newValue !== '') {
+                // Guardar inmediatamente en la base de datos si hay ID de cita
+                if (id_cit && id_cit !== '') {
+                    var tipoEjecutivo = campo === 'id_eje_admin' ? 'Administrativo' : 'Admisión';
+                    console.log('👥 Guardando ejecutivo ' + tipoEjecutivo + ' inmediatamente:', campo, valorParaGuardar, 'para cita ID:', id_cit);
+                    $.ajax({
+                        url: 'server/controlador_citas.php',
+                        type: 'POST',
+                        data: {
+                            action: 'actualizar_cita',
+                            id_cit: id_cit,
+                            campo: campo,
+                            valor: valorParaGuardar
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            console.log('👥 Respuesta del servidor para ejecutivo ' + tipoEjecutivo + ':', response);
+                            if (response.success) {
+                                console.log('✅ Ejecutivo ' + tipoEjecutivo + ' guardado correctamente en BD');
+                                mostrarBadgeWebSocket('success', 'Ejecutivo ' + tipoEjecutivo + ' actualizado: ' + newValue);
+                            } else {
+                                console.error('❌ Error al guardar ejecutivo ' + tipoEjecutivo + ':', response.message);
+                                alert('Error al guardar ejecutivo ' + tipoEjecutivo + ': ' + response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('❌ Error de conexión al actualizar campo ' + campo + ':', error);
+                            console.error('Detalles del error:', xhr.responseText);
+                            alert('Error de conexión al actualizar campo ' + campo + ': ' + error);
+                        }
+                    });
+                } else {
+                    console.warn('⚠️ No se puede guardar ejecutivo: no hay ID de cita válido');
                 }
             }
             
@@ -3396,6 +3561,7 @@
             var fechaFin = $('#fecha-fin-filtro').val();
             var idEjecutivo = $('#ejecutivo-filtro').val();
             var idPlantel = $('#plantel-filtro').val();
+            var tipoEjecutivo = $('#tipo-ejecutivo-filtro').val();
             var incluirPlanteles = $('#planteles-asociados-filtro').is(':checked');
             
             var datos = { 
@@ -3419,11 +3585,17 @@
                 datos.id_plantel = idPlantel;
             }
             
+            // PRÁCTICA 28: Filtro por tipo de ejecutivo
+            if (tipoEjecutivo) {
+                datos.tipo_ejecutivo = tipoEjecutivo;
+            }
+            
             console.log('=== DEBUG CARGAR CITAS ===');
             console.log('Fecha inicio:', fechaInicio);
             console.log('Fecha fin:', fechaFin);
             console.log('ID Ejecutivo:', idEjecutivo);
             console.log('ID Plantel:', idPlantel);
+            console.log('Tipo Ejecutivo:', tipoEjecutivo);
             console.log('Incluir planteles:', incluirPlanteles);
             console.log('Datos enviados:', datos);
             console.log('========================');
@@ -3466,6 +3638,7 @@
             var fechaFin = $('#fecha-fin-filtro').val();
             var idEjecutivo = $('#ejecutivo-filtro').val();
             var idPlantel = $('#plantel-filtro').val();
+            var tipoEjecutivo = $('#tipo-ejecutivo-filtro').val();
             var incluirPlanteles = $('#planteles-asociados-filtro').is(':checked');
             
             if (fechaInicio && fechaFin) {
@@ -3488,6 +3661,12 @@
             if (idPlantel) {
                 var nombrePlantel = $('#plantel-filtro option:selected').text();
                 filtros.push('🏢 Plantel: ' + nombrePlantel);
+            }
+            
+            // PRÁCTICA 28: Mostrar filtro de tipo de ejecutivo
+            if (tipoEjecutivo) {
+                var icono = tipoEjecutivo === 'Administrativo' ? '🔹' : '🔸';
+                filtros.push(icono + ' Tipo: ' + tipoEjecutivo);
             }
             
             if (filtros.length > 0) {
@@ -3602,6 +3781,7 @@
             $('#fecha-fin-filtro').val(fechaFin);
             $('#ejecutivo-filtro').val('');
             $('#plantel-filtro').val('');
+            $('#tipo-ejecutivo-filtro').val('');
             $('#planteles-asociados-filtro').prop('checked', false);
             
             // Limpiar mensaje de navegación
@@ -3684,6 +3864,22 @@
                 } else if (col.key === 'id_eje2') {
                     // Para ejecutivos, usar el nombre en lugar del ID
                     fila[index] = cita.nom_eje || '';
+                } else if (col.key === 'id_eje_admin') {
+                    // PRÁCTICA 28: Para ejecutivos administrativos, convertir ID a nombre
+                    if (cita.id_eje_admin) {
+                        var nombreEjecutivo = obtenerNombreEjecutivo(cita.id_eje_admin);
+                        fila[index] = nombreEjecutivo || '';
+                    } else {
+                        fila[index] = '';
+                    }
+                } else if (col.key === 'id_eje_admision') {
+                    // PRÁCTICA 28: Para ejecutivos de admisión, convertir ID a nombre
+                    if (cita.id_eje_admision) {
+                        var nombreEjecutivo = obtenerNombreEjecutivo(cita.id_eje_admision);
+                        fila[index] = nombreEjecutivo || '';
+                    } else {
+                        fila[index] = '';
+                    }
                 } else if (col.key === 'pla_cit') {
                     // Para planteles, usar el nombre en lugar del ID
                     fila[index] = cita.nom_pla || '';
@@ -3905,6 +4101,12 @@
             if (params.plantel) {
                 $('#plantel-filtro').val(params.plantel);
                 console.log('Plantel seleccionado:', params.plantel);
+            }
+            
+            // PRÁCTICA 28: Aplicar filtro de tipo de ejecutivo si existe
+            if (params.tipo_ejecutivo) {
+                $('#tipo-ejecutivo-filtro').val(params.tipo_ejecutivo);
+                console.log('Tipo de ejecutivo seleccionado:', params.tipo_ejecutivo);
             }
             
             // Aplicar filtros de fecha si existen

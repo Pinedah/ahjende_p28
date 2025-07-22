@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$fecha_fin = isset($_POST['fecha_fin']) ? escape($_POST['fecha_fin'], $connection) : null;
 			$id_ejecutivo = isset($_POST['id_ejecutivo']) ? intval($_POST['id_ejecutivo']) : null;
 			$id_plantel = isset($_POST['id_plantel']) ? intval($_POST['id_plantel']) : null;
+			$tipo_ejecutivo = isset($_POST['tipo_ejecutivo']) ? escape($_POST['tipo_ejecutivo'], $connection) : null;
 			$incluir_planteles_asociados = isset($_POST['incluir_planteles_asociados']) && 
 										($_POST['incluir_planteles_asociados'] === 'true' || $_POST['incluir_planteles_asociados'] === true || $_POST['incluir_planteles_asociados'] === 1 || $_POST['incluir_planteles_asociados'] === '1');
 		
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - fecha_fin: ' . ($fecha_fin ?: 'null') . "\n", FILE_APPEND);
 		file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - id_ejecutivo: ' . ($id_ejecutivo ?: 'null') . "\n", FILE_APPEND);
 		file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - id_plantel: ' . ($id_plantel ?: 'null') . "\n", FILE_APPEND);
+		file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - tipo_ejecutivo: ' . ($tipo_ejecutivo ?: 'null') . "\n", FILE_APPEND);
 		file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - incluir_planteles_asociados RAW: ' . (isset($_POST['incluir_planteles_asociados']) ? $_POST['incluir_planteles_asociados'] : 'not set') . "\n", FILE_APPEND);
 		file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - incluir_planteles_asociados FINAL: ' . ($incluir_planteles_asociados ? 'true' : 'false') . "\n", FILE_APPEND);
 			
@@ -57,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			
 			// Agregar el campo del ejecutivo y plantel
 			$camposSelect[] = 'e.nom_eje';
+			$camposSelect[] = 'e.tipo as tipo_ejecutivo';
 			$camposSelect[] = 'p.nom_pla';
 			$selectFields = implode(', ', $camposSelect);
 			
@@ -106,6 +109,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$whereConditions[] = "c.pla_cit = $id_plantel";
 			file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - Filtro por plantel (nueva lógica): ' . $id_plantel . "\n", FILE_APPEND);
 		}
+		
+		// PRÁCTICA 28: Filtro por tipo de ejecutivo
+		if ($tipo_ejecutivo) {
+			$whereConditions[] = "e.tipo = '$tipo_ejecutivo'";
+			file_put_contents('debug.log', '[' . date('Y-m-d H:i:s') . '] - P28: Filtro por tipo de ejecutivo: ' . $tipo_ejecutivo . "\n", FILE_APPEND);
+		}
 					$whereClause = implode(' AND ', $whereConditions);
 		
 		// Log para debugging
@@ -143,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		break;
 
 		case 'obtener_ejecutivos':
-			$query = "SELECT id_eje, nom_eje FROM ejecutivo ORDER BY nom_eje ASC";
+			$query = "SELECT id_eje, nom_eje, tipo FROM ejecutivo ORDER BY nom_eje ASC";
 			$datos = ejecutarConsulta($query, $connection);
 
 			if($datos !== false) {
@@ -379,6 +388,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 							break;
 						case 'id_eje2':
 							$config['header'] = 'EJECUTIVO';
+							$config['type'] = 'dropdown';
+							$config['width'] = 180;
+							break;
+						case 'id_eje_admin':
+							$config['header'] = 'ADMINISTRATIVO';
+							$config['type'] = 'dropdown';
+							$config['width'] = 180;
+							break;
+						case 'id_eje_admision':
+							$config['header'] = 'ADMISIÓN';
 							$config['type'] = 'dropdown';
 							$config['width'] = 180;
 							break;
